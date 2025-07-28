@@ -1,38 +1,47 @@
-var tmdbUrl = "https://api.themoviedb.org"
-const http = require('http');
 const axios = require('axios');
 const url = require('url');
-const common = require('../utility/common.js')
+const common = require('../utility/common.js'); // 确保这里有 apiKey
 
 module.exports = async (req, res) => {
-  var { url: requestUrl} = req;
-  const parsedUrl = url.parse(requestUrl);
-  // 重定向的`/get`必须去除
-  if (!requestUrl.startsWith("/get")) {
-    return;
-  }else{
-    requestUrl = requestUrl.replace(/^\/get/, '');
-  }
-  // 如果`api_key`前面存在参数，则`api_key`前面是'&'，否则前面就是是'?'
-  if(parsedUrl.query===null){
-    tmdbUrl = `https://api.themoviedb.org/3${requestUrl}?api_key=${common.apiKey}`;
-  }else {
-    tmdbUrl = `https://api.themoviedb.org/3${requestUrl}&api_key=${common.apiKey}`;
-  }
-
   try {
-    // 发送 HTTP 请求以获取 TMDb API 的响应
+    let requestUrl = req.url;
+    if (!requestUrl.startsWith('/get')) {
+      res.statusCode = 404;
+      res.end('Not Found');
+      return;
+    }
+
+    // 去除 /get 前缀，保留后面路径和查询
+    requestUrl = requestUrl.replace(/^\/get/, '');
+
+    // 解析请求 URL 和查询参数
+    const parsedUrl = url.parse(requestUrl, true);
+
+    // 添加 api_key 参数
+    const query = parsedUrl.query || {};
+    query.api_key = common.apiKey;
+
+    // 重新构造查询字符串
+    const queryString = Object.entries(query)
+      .map(([k, v]) => `${k}=${encodeURIComponent(v)}`)
+      .join('&');
+
+    // TMDb 完整请求地址
+    const tmdbUrl = `https://api.themoviedb.org/3${parsedUrl.pathname}?${queryString}`;
+
+    // 通过 axios 请求 TMDb API
     const response = await axios.get(tmdbUrl);
-    // 将 TMDb API 的响应返回给调用方
+
+    // 返回 JSON
     res.statusCode = 200;
     res.setHeader('Content-Type', 'application/json');
     res.end(JSON.stringify(response.data));
-    console.log(tmdbUrl)
-  }catch (error) {
-    // 处理错误情况
+
+    console.log(`[TMDb] Request: ${tmdbUrl}`);
+  } catch (error) {
+    console.error('[TMDb] Error:', error.message);
     res.statusCode = 500;
     res.setHeader('Content-Type', 'text/plain');
-    res.end(`${error}`);
-    console.log(`${tmdbUrl}`);
+    res.end(`Error fetching TMDb data: ${error.message}`);
   }
 };
