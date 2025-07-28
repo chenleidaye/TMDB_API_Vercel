@@ -10,14 +10,14 @@ module.exports = async (req, res) => {
   const query = querystring.parse(parsedUrl.query);
   if(!common.isObjectEmpty(body))
   {
-      tmdbUrl = `https://api.themoviedb.org/3/discover/movie\
+      tmdbUrl = `https://api.themoviedb.org/3/search/movie\
 ?include_adult=${body.include_adult}\
 &language=${body.language}\
 &page=${body.page}\
 &sort_by=${body.sort_by}\
 &api_key=${common.apiKey}`;
   }else if(!common.isObjectEmpty(query)){
-      tmdbUrl = `https://api.themoviedb.org/3/discover/movie\
+      tmdbUrl = `https://api.themoviedb.org/3/search/movie\
 ?include_adult=${query.include_adult}\
 &language=${query.language}\
 &page=${query.page}\
