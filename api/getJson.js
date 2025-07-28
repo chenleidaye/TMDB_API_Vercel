@@ -1,6 +1,6 @@
 const axios = require('axios');
 const url = require('url');
-const common = require('../utility/common.js'); // 确保这里有 apiKey
+const common = require('../utility/common.js');
 
 module.exports = async (req, res) => {
   try {
@@ -17,6 +17,12 @@ module.exports = async (req, res) => {
     // 解析请求 URL 和查询参数
     const parsedUrl = url.parse(requestUrl, true);
 
+    // 路径是否以 /3 开头，没有则拼接 /3
+    let pathname = parsedUrl.pathname;
+    if (!pathname.startsWith('/3')) {
+      pathname = '/3' + pathname;
+    }
+
     // 添加 api_key 参数
     const query = parsedUrl.query || {};
     query.api_key = common.apiKey;
@@ -27,7 +33,7 @@ module.exports = async (req, res) => {
       .join('&');
 
     // TMDb 完整请求地址
-    const tmdbUrl = `https://api.themoviedb.org/3${parsedUrl.pathname}?${queryString}`;
+    const tmdbUrl = `https://api.themoviedb.org${pathname}?${queryString}`;
 
     // 通过 axios 请求 TMDb API
     const response = await axios.get(tmdbUrl);
@@ -39,7 +45,7 @@ module.exports = async (req, res) => {
 
     console.log(`[TMDb] Request: ${tmdbUrl}`);
   } catch (error) {
-    console.error('[TMDb] Error:', error.message);
+    console.error('[TMDb] Error:', error.response ? error.response.data : error.message);
     res.statusCode = 500;
     res.setHeader('Content-Type', 'text/plain');
     res.end(`Error fetching TMDb data: ${error.message}`);
